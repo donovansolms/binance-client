@@ -4,6 +4,7 @@ import httpMethods from 'http-client'
 import openWebSocket from 'open-websocket'
 
 const BASE = 'wss://stream.binance.com:9443/ws'
+const COMBINED_BASE = 'wss://stream.binance.com:9443/stream'
 
 const depth = (payload, cb) => {
   const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
@@ -69,10 +70,17 @@ const candles = (payload, interval, cb) => {
     throw new Error('Please pass a symbol, interval and callback.')
   }
 
-  const cache = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
-    const w = openWebSocket(`${BASE}/${symbol.toLowerCase()}@kline_${interval}`)
+  const streams = (Array.isArray(payload) ? payload : [payload]).map(symbol => {
+    return `${symbol.toLowerCase()}@kline_${interval}`;
+  });
+  // TODO: Binance allows up to 1024 streams to be combined, if larger, split
+  // into multiple combined streams
+  const streamEndpoints = [COMBINED_BASE + "?streams=" + streams.join("/")];
+
+  var cache = (streamEndpoints).map(function (streamEndpoint) {
+    const w = openWebSocket(streamEndpoint)
     w.onmessage = msg => {
-      const { e: eventType, E: eventTime, s: symbol, k: tick } = JSON.parse(msg.data)
+      const { e: eventType, E: eventTime, s: symbol, k: tick } = JSON.parse(msg.data).data
       const {
         t: startTime,
         T: closeTime,
