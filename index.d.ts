@@ -720,6 +720,7 @@ declare module 'binance-client-combined-ws' {
     candles: (
       symbol: string | string[],
       interval: string,
+      useUS: boolean,
       callback: (ticker: Candle) => void,
     ) => StreamReturnObj
     trades: (symbols: string | string[], callback: (trade: WsTrade) => void) => StreamReturnObj
